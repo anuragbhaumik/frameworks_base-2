@@ -98,5 +98,6 @@ public class SystemSettings {
         Settings.System.OMNI_CUSTOM_FP_ICON,
         Settings.System.OMNI_QS_LAYOUT_COLUMNS_LANDSCAPE,
         Settings.System.OMNI_QS_LAYOUT_COLUMNS,
+        Settings.System.QS_LAYOUT_ROWS,
     };
 }

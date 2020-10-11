@@ -22,6 +22,7 @@ import static com.android.systemui.util.Utils.useQsMediaPlayer;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -30,6 +31,8 @@ import android.metrics.LogMaker;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.UserHandle;
+import android.provider.Settings;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -153,6 +156,7 @@ public class QSPanel extends LinearLayout implements Tunable, Callback, Brightne
     private int mMediaTotalTopMargin;
     private int mFooterMarginStartHorizontal;
     private Consumer<Boolean> mMediaVisibilityChangedListener;
+    private boolean mMediaVisible;
 
     protected boolean mIsLandscape;
 
@@ -425,6 +429,18 @@ public class QSPanel extends LinearLayout implements Tunable, Callback, Brightne
 
     private void updateViewVisibilityForTuningValue(View view, @Nullable String newValue) {
         view.setVisibility(TunerService.parseIntegerSwitch(newValue, true) ? VISIBLE : GONE);
+    }
+
+    private void updateMinRows() {
+        if (getTileLayout() == null) {
+            return;
+        }
+        if (!mMediaVisible) {
+            int rows = Settings.System.getIntForUser(
+                    mContext.getContentResolver(), Settings.System.QS_LAYOUT_ROWS, 3,
+                    UserHandle.USER_CURRENT);
+            getTileLayout().setMinRows(mIsLandscape ? 1 : rows);
+        }
     }
 
     public void openDetails(String subPanel) {
@@ -1323,6 +1339,7 @@ public class QSPanel extends LinearLayout implements Tunable, Callback, Brightne
         if (mTileLayout != null) {
             mTileLayout.updateSettings();
         }
+        updateMinRows();
     }
 
     public int getNumColumns() {

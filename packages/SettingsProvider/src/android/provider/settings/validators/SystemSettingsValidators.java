@@ -264,5 +264,6 @@ public class SystemSettingsValidators {
         VALIDATORS.put(System.LIVE_DISPLAY_HINTED, new InclusiveIntegerRangeValidator(-3, 1));
         VALIDATORS.put(System.OMNI_QS_LAYOUT_COLUMNS_LANDSCAPE, new InclusiveIntegerRangeValidator(4, 6));
         VALIDATORS.put(System.OMNI_QS_LAYOUT_COLUMNS, new InclusiveIntegerRangeValidator(3, 6));
+        VALIDATORS.put(System.QS_LAYOUT_ROWS, new InclusiveIntegerRangeValidator(2, 3));
     }
 }
