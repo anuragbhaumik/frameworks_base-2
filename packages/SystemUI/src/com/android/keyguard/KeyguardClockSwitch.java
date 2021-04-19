@@ -295,6 +295,7 @@ public class KeyguardClockSwitch extends RelativeLayout {
         mClockPlugin.setStyle(getPaint().getStyle());
         mClockPlugin.setTextColor(getCurrentTextColor());
         mClockPlugin.setDarkAmount(mDarkAmount);
+        mClockPlugin.setHasVisibleNotifications(mHasVisibleNotifications);
         if (mColorPalette != null) {
             mClockPlugin.setColorPalette(mSupportsDarkText, mColorPalette);
         }
@@ -380,6 +381,7 @@ public class KeyguardClockSwitch extends RelativeLayout {
             mClockPlugin.setDarkAmount(darkAmount);
         }
         updateBigClockAlpha();
+        updateClockVisibleNotifications();
     }
 
     /**
@@ -397,6 +399,7 @@ public class KeyguardClockSwitch extends RelativeLayout {
                             mBigClockContainer));
         }
         updateBigClockAlpha();
+        updateClockVisibleNotifications();
     }
 
     public Paint getPaint() {
@@ -483,6 +486,12 @@ public class KeyguardClockSwitch extends RelativeLayout {
             } else if (mBigClockContainer.getVisibility() == INVISIBLE) {
                 mBigClockContainer.setVisibility(VISIBLE);
             }
+        }
+    }
+
+    private void updateClockVisibleNotifications() {
+        if (mClockPlugin != null) {
+            mClockPlugin.setHasVisibleNotifications(mHasVisibleNotifications && mDarkAmount == 0f);
         }
     }
 
