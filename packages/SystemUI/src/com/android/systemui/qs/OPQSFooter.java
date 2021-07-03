@@ -99,7 +99,8 @@ public class OPQSFooter extends LinearLayout {
     @Nullable
     private TouchAnimator createFooterAnimator() {
         TouchAnimator.Builder builder = new TouchAnimator.Builder()
-                .addFloat(mEdit, "alpha", 0, 0, 1);
+                .addFloat(mEdit, "alpha", 0, 0, 1)
+                .addFloat(mDataUsageView, "alpha", 0, 0, 1);
         if (mIsLandscape) {
             builder = builder.addFloat(mSettingsButton, "alpha", 0, 0, 1)
                     .setStartDelay(0.5f);
