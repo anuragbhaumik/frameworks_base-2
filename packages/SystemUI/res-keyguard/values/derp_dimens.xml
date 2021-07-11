@@ -31,5 +31,7 @@
 
     <!-- Custom clock -->
     <dimen name="custom_clock_left_padding">50dp</dimen>
+    <dimen name="ide_clock_margin_start">40dp</dimen>
+    <dimen name="oos_clock_padding_start">28dp</dimen>
 
 </resources>
