@@ -440,6 +440,8 @@ public class QSPanel extends LinearLayout implements Tunable, Callback, Brightne
                     mContext.getContentResolver(), Settings.System.QS_LAYOUT_ROWS, 3,
                     UserHandle.USER_CURRENT);
             getTileLayout().setMinRows(mIsLandscape ? 1 : rows);
+        } else {
+            getTileLayout().setMinRows(2);
         }
     }
 

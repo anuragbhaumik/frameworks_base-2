@@ -379,7 +379,7 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
     public void setListening(boolean listening) {
         if (DEBUG) Log.d(TAG, "setListening " + listening);
         if (mListening != listening) {
-            mHeader.getHeaderQsPanel().setBrightnessSliderVisible(listening);
+            mQuickQSPanel.setBrightnessSliderVisible(listening);
         }
         mListening = listening;
         mQSContainerImplController.setListening(listening);
@@ -390,7 +390,7 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
 
     @Override
     public void setHeaderListening(boolean listening) {
-        mHeader.getHeaderQsPanel().setBrightnessListening(listening);
+        mQuickQSPanel.setBrightnessListening(listening);
         mHeader.setListening(listening);
         mFooter.setListening(listening);
     }
@@ -410,7 +410,7 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
         int currentHeight = getView().getHeight();
         if (mLastHeaderTranslation != headerTranslation || mLastQSExpansion != expansion) {
             mQSPanel.notifyExpansion();
-            mHeader.getHeaderQsPanel().notifyExpansion();
+            mQuickQSPanel.notifyExpansion();
         }
         mLastHeaderTranslation = headerTranslation;
         if (expansion == mLastQSExpansion && mLastKeyguardAndExpanded == onKeyguardAndExpanded
@@ -460,7 +460,7 @@ public class QSFragment extends LifecycleFragment implements QS, CommandQueue.Ca
 
     private void updateBrightnessSliderVisibility(boolean fullyCollapsed) {
         mQSPanel.setBrightnessSliderVisible(!fullyCollapsed);
-        mHeader.getHeaderQsPanel().setBrightnessSliderVisible(fullyCollapsed);
+        mQuickQSPanel.setBrightnessSliderVisible(fullyCollapsed);
     }
 
     private void updateQsBounds() {
