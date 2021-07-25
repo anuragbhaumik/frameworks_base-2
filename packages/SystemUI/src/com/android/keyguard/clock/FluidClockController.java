@@ -17,13 +17,11 @@
 package com.android.keyguard.clock;
 
 import android.app.WallpaperManager;
-import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,7 +31,6 @@ import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -79,8 +76,6 @@ public class FluidClockController implements ClockPlugin {
     private TextClock mDate;
     private TextClock mYear;
 
-    private Context mContext;
-
     /**
      * Create a DefaultClockController instance.
      *
@@ -89,21 +84,24 @@ public class FluidClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     public FluidClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
     }
 
     private void createViews() {
         mView = (ClockLayout) mLayoutInflater
                 .inflate(R.layout.digital_clock_fluid, null);
-        mTimeClock = mView.findViewById(R.id.time_clock);
-        mSecondsClock = mView.findViewById(R.id.seconds_clock);
-        mDay = mView.findViewById(R.id.clock_day);
-        mDate = mView.findViewById(R.id.clock_date);
-        mYear = mView.findViewById(R.id.clock_year);
+        setViews(mView);
+    }
+
+    private void setViews(View view) {
+        mTimeClock = view.findViewById(R.id.time_clock);
+        mSecondsClock = view.findViewById(R.id.seconds_clock);
+        mDay = view.findViewById(R.id.clock_day);
+        mDate = view.findViewById(R.id.clock_date);
+        mYear = view.findViewById(R.id.clock_year);
     }
 
     @Override
@@ -135,25 +133,12 @@ public class FluidClockController implements ClockPlugin {
     public Bitmap getPreview(int width, int height) {
 
         View previewView = mLayoutInflater.inflate(R.layout.digital_fluid_preview, null);
-        TextClock previewTime = previewView.findViewById(R.id.time_clock);
-        TextClock previewSeconds = previewView.findViewById(R.id.seconds_clock);
-        TextClock previewDay = previewView.findViewById(R.id.clock_day);
-        TextClock previewDate = previewView.findViewById(R.id.clock_date);
-        TextClock previewYear = previewView.findViewById(R.id.clock_year);
 
-        // Initialize state of plugin before generating preview.
-        previewTime.setTextColor(Color.WHITE);
-        previewDay.setTextColor(Color.WHITE);
-        previewYear.setTextColor(Color.WHITE);
+        setViews(previewView);
+
         ColorExtractor.GradientColors colors = mColorExtractor.getColors(
                 WallpaperManager.FLAG_LOCK);
-        int[] colorPalette = colors.getColorPalette();
-        int accentColor = mResources.getColor(R.color.typeClockAccentColor, null);
-        if (colorPalette != null) {
-            accentColor = colorPalette[Math.max(0, colorPalette.length - 5)];
-        }
-        previewSeconds.setTextColor(accentColor);
-        previewDate.setTextColor(accentColor);
+        setColorPalette(colors.supportsDarkText(), colors.getColorPalette());
         onTimeTick();
 
         return mRenderer.createPreview(previewView, width, height);
@@ -188,35 +173,19 @@ public class FluidClockController implements ClockPlugin {
     }
 
     @Override
-    public void setTypeface(Typeface tf) {
-        mTimeClock.setTypeface(tf);
-        mSecondsClock.setTypeface(tf);
-        mDay.setTypeface(tf);
-        mDate.setTypeface(tf);
-        mYear.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
-
-    @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {
         if (colorPalette == null || colorPalette.length == 0) {
             return;
         }
         final int accentColor = colorPalette[Math.max(0, colorPalette.length - 5)];
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mSecondsClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mDate.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mSecondsClock.setTextColor(accentColor);
-            mDate.setTextColor(accentColor);
-        }
+        mSecondsClock.setTextColor(accentColor);
+        mDate.setTextColor(accentColor);
     }
 
     @Override
     public void onTimeTick() {
-        mView.onTimeChanged();
+        if (mView != null)
+            mView.onTimeChanged();
         mTimeClock.refreshTime();
         mSecondsClock.refreshTime();
         mDay.refreshTime();
@@ -226,7 +195,8 @@ public class FluidClockController implements ClockPlugin {
 
     @Override
     public void setDarkAmount(float darkAmount) {
-        mView.setDarkAmount(darkAmount);
+        if (mView != null)
+            mView.setDarkAmount(darkAmount);
     }
 
     @Override

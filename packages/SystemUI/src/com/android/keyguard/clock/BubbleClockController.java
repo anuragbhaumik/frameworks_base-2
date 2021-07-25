@@ -21,18 +21,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextClock;
-import android.provider.Settings;
-import android.content.Context;
 
 import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -78,8 +74,6 @@ public class BubbleClockController implements ClockPlugin {
     private View mLockClockContainer;
     private TextClock mLockClock;
 
-    private Context mContext;
-
     /**
      * Helper to extract colors from wallpaper palette for clock face.
      */
@@ -93,11 +87,10 @@ public class BubbleClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     public BubbleClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
         mClockPosition = new SmallClockPosition(res);
     }
 
@@ -179,14 +172,6 @@ public class BubbleClockController implements ClockPlugin {
     }
 
     @Override
-    public void setTypeface(Typeface tf) {
-        mLockClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
-
-    @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {
         mPalette.setColorPalette(supportsDarkText, colorPalette);
         updateColor();
@@ -194,15 +179,9 @@ public class BubbleClockController implements ClockPlugin {
 
     private void updateColor() {
         final int primary = mPalette.getPrimaryColor();
-
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mLockClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mAnalogClock.setClockColors(primary, mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            final int secondary = mPalette.getSecondaryColor();
-            mLockClock.setTextColor(secondary);
-            mAnalogClock.setClockColors(primary, secondary);
-        }
+        final int secondary = mPalette.getSecondaryColor();
+        mLockClock.setTextColor(secondary);
+        mAnalogClock.setClockColors(primary, secondary);
     }
 
     @Override

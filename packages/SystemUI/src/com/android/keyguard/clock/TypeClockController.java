@@ -22,17 +22,13 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
 import android.util.MathUtils;
-import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.provider.Settings;
-import android.content.Context;
 
 import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -76,8 +72,6 @@ public class TypeClockController implements ClockPlugin {
     private View mView;
     private TypographicClock mTypeClock;
 
-    private Context mContext;
-
     /**
      * Small clock shown on lock screen above stack scroller.
      */
@@ -96,11 +90,10 @@ public class TypeClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     TypeClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
         mStatusBarHeight = res.getDimensionPixelSize(R.dimen.status_bar_height);
         mKeyguardLockPadding = res.getDimensionPixelSize(R.dimen.keyguard_lock_padding);
         mKeyguardLockHeight = res.getDimensionPixelSize(R.dimen.keyguard_lock_height);
@@ -178,8 +171,7 @@ public class TypeClockController implements ClockPlugin {
     @Override
     public int getPreferredY(int totalHeight) {
         // On AOD, clock needs to appear below the status bar with enough room for pixel shifting
-        int aodY = mStatusBarHeight + mKeyguardLockHeight + 2 * mKeyguardLockPadding
-                + mBurnInOffsetY + mTypeClock.getHeight() + (mTypeClock.getHeight() / 2);
+        int aodY = mStatusBarHeight + mKeyguardLockHeight + 2 * mKeyguardLockPadding + mTypeClock.getHeight() + (mTypeClock.getHeight() / 2);
         // On lock screen, clock needs to appear below the lock icon
         int lockY =  mStatusBarHeight + mKeyguardLockHeight + 2 * mKeyguardLockPadding + (mTypeClock.getHeight() / 2);
         return (int) MathUtils.lerp(lockY, aodY, mDarkAmount);
@@ -190,23 +182,9 @@ public class TypeClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mTypeClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mLockClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mTypeClock.setTextColor(color);
-            mLockClock.setTextColor(color);
-        }
+        mTypeClock.setTextColor(color);
+        mLockClock.setTextColor(color);
     }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mTypeClock.setTypeface(tf);
-        mLockClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {
@@ -214,13 +192,8 @@ public class TypeClockController implements ClockPlugin {
             return;
         }
         final int color = colorPalette[Math.max(0, colorPalette.length - 5)];
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mTypeClock.setClockColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mLockClock.setClockColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mTypeClock.setClockColor(color);
-            mLockClock.setClockColor(color);
-        }
+        mTypeClock.setClockColor(color);
+        mLockClock.setClockColor(color);
     }
 
     @Override

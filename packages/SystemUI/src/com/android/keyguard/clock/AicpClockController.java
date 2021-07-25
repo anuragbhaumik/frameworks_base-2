@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2019 The Android Open Source Project
- * Copyright (C) 2020 ProjectFluid
- * Copyright (C) 2021 ShapeShiftOS
+ * Copyright (C) 2013-2020 AICP
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,16 +22,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
-import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextClock;
 
-import com.android.systemui.R;
-import com.android.systemui.plugins.ClockPlugin;
-import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.internal.colorextraction.ColorExtractor;
+import com.android.systemui.R;
+import com.android.systemui.colorextraction.SysuiColorExtractor;
+import com.android.systemui.plugins.ClockPlugin;
 
 import java.util.TimeZone;
 
@@ -39,9 +37,9 @@ import static com.android.systemui.statusbar.phone
         .KeyguardClockPositionAlgorithm.CLOCK_USE_DEFAULT_Y;
 
 /**
- * Plugin for the default clock face used only to provide a preview.
+ * Controller for Aicp clock that can appear on lock screen and AOD.
  */
-public class OctaviDigitalClockController implements ClockPlugin {
+public class AicpClockController implements ClockPlugin {
 
     /**
      * Resources used to get title and thumbnail.
@@ -54,91 +52,88 @@ public class OctaviDigitalClockController implements ClockPlugin {
     private final LayoutInflater mLayoutInflater;
 
     /**
+     * Extracts accent color from wallpaper.
+     */
+    private final SysuiColorExtractor mColorExtractor;
+
+    /**
+     * Computes preferred position of clock.
+     */
+    private final SmallClockPosition mClockPosition;
+
+    /**
      * Renders preview from clock view.
      */
     private final ViewPreviewer mRenderer = new ViewPreviewer();
 
     /**
-     * Extracts accent color from wallpaper.
-     */
-    private final SysuiColorExtractor mColorExtractor;
-
-
-    /**
-     * Root view of clock.
+     * Small clock shown on lock screen above stack scroller.
      */
     private ClockLayout mView;
+    private ImageClock mLockClock;
 
     /**
-     * Text clock in preview view hierarchy.
+     * Helper to extract colors from wallpaper palette for clock face.
      */
-    private TextClock mTimeClock;
-    private TextClock mDay;
-    private TextClock mDate;
+    private final ClockPalette mPalette = new ClockPalette();
 
     /**
-     * Create a DefaultClockController instance.
+     * Create a BubbleClockController instance.
      *
      * @param res Resources contains title and thumbnail.
      * @param inflater Inflater used to inflate custom clock views.
      * @param colorExtractor Extracts accent color from wallpaper.
      */
-    public OctaviDigitalClockController(Resources res, LayoutInflater inflater,
+    public AicpClockController(Resources res, LayoutInflater inflater,
             SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
-	mColorExtractor = colorExtractor;
+        mColorExtractor = colorExtractor;
+        mClockPosition = new SmallClockPosition(res);
     }
 
     private void createViews() {
-        mView = (ClockLayout) mLayoutInflater
-                .inflate(R.layout.digital_clock_octavi, null);
-	setViews(mView);
+        mView = (ClockLayout) mLayoutInflater.inflate(R.layout.aicp_clock, null);
+        mLockClock = mView.findViewById(R.id.aicp_clock);
     }
-
-    private void setViews(View view) {
-        mTimeClock = view.findViewById(R.id.time_clock);
-        mDay = view.findViewById(R.id.clock_day);
-        mDate = view.findViewById(R.id.date);
-    }
-
 
     @Override
     public void onDestroyView() {
         mView = null;
-        mTimeClock = null;
-        mDay = null;
-        mDate = null;
+        mLockClock = null;
     }
 
     @Override
     public String getName() {
-        return "octavi";
+        return "aicp";
     }
 
     @Override
     public String getTitle() {
-        return "Octavi";
+        return mResources.getString(R.string.clock_title_aicp);
     }
 
     @Override
     public Bitmap getThumbnail() {
-        return BitmapFactory.decodeResource(mResources, R.drawable.octavi_digital_preview);
+        return BitmapFactory.decodeResource(mResources, R.drawable.aicp_thumbnail);
     }
 
     @Override
     public Bitmap getPreview(int width, int height) {
 
-        View previewView = mLayoutInflater.inflate(R.layout.digital_clock_octavi_preview, null);
-
-	setViews(previewView);
-
+        // Prepare the clock view for the preview
+        View previewView = mLayoutInflater.inflate(R.layout.aicp_clock_preview, null);
+        ImageClock previewClock = previewView.findViewById(R.id.aicp_clock);
+        TextClock previewDate = previewView.findViewById(R.id.date);
+        // Initialize state of plugin before generating preview.
+        setDarkAmount(1f);
+        setTextColor(Color.WHITE);
+        previewDate.setTextColor(Color.WHITE);
         ColorExtractor.GradientColors colors = mColorExtractor.getColors(
                 WallpaperManager.FLAG_LOCK);
-
-	setColorPalette(colors.supportsDarkText(), colors.getColorPalette());
+        setColorPalette(colors.supportsDarkText(), colors.getColorPalette());
+        previewClock.onTimeChanged();
         onTimeTick();
-
         return mRenderer.createPreview(previewView, width, height);
     }
 
@@ -165,49 +160,40 @@ public class OctaviDigitalClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        mTimeClock.setTextColor(color);
-        mDay.setTextColor(color);
-        mDate.setTextColor(color);
-    }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mTimeClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {
-        mDay.setTypeface(tf);
-        mDate.setTypeface(tf);
+        updateColor();
     }
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {
-        if (colorPalette == null || colorPalette.length == 0) {
-            return;
-        }
+        mPalette.setColorPalette(supportsDarkText, colorPalette);
+        updateColor();
+    }
+
+    private void updateColor() {
+        final int primary = mPalette.getPrimaryColor();
+        final int secondary = mPalette.getSecondaryColor();
     }
 
     @Override
     public void onTimeTick() {
-	if (mView != null)
-	    mView.onTimeChanged();
-        mTimeClock.refreshTime();
-        mDay.refreshTime();
-        mDate.refreshTime();
+        if (mView != null)
+            mView.onTimeChanged();
+        if (mLockClock != null)
+            mLockClock.onTimeChanged();
     }
 
     @Override
     public void setDarkAmount(float darkAmount) {
-	if (mView != null)
-	    mView.setDarkAmount(darkAmount);
+        mPalette.setDarkAmount(darkAmount);
     }
 
     @Override
-    public void onTimeZoneChanged(TimeZone timeZone) {}
+    public void onTimeZoneChanged(TimeZone timeZone) {
+        mLockClock.onTimeZoneChanged(timeZone);
+    }
 
     @Override
     public boolean shouldShowStatusArea() {
-        return false;
+        return true;
     }
 }

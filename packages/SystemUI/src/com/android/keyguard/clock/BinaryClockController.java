@@ -21,8 +21,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
-import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextClock;
@@ -34,13 +33,10 @@ import com.android.systemui.plugins.ClockPlugin;
 
 import java.util.TimeZone;
 
-import static com.android.systemui.statusbar.phone
-        .KeyguardClockPositionAlgorithm.CLOCK_USE_DEFAULT_Y;
-
 /**
- * Plugin for the default clock face used only to provide a preview.
+ * Controller for binary clock that can appear on lock screen and AOD.
  */
-public class SammyClockController implements ClockPlugin {
+public class BinaryClockController implements ClockPlugin {
 
     /**
      * Resources used to get title and thumbnail.
@@ -58,86 +54,87 @@ public class SammyClockController implements ClockPlugin {
     private final SysuiColorExtractor mColorExtractor;
 
     /**
+     * Computes preferred position of clock.
+     */
+    private final SmallClockPosition mClockPosition;
+
+    /**
      * Renders preview from clock view.
      */
     private final ViewPreviewer mRenderer = new ViewPreviewer();
 
     /**
-     * Root view of clock.
+     * Custom clock shown on AOD screen and behind stack scroller on lock.
      */
-    private ClockLayout mView;
+    private BinaryClock mBinaryClock;
+    private ClockLayout mBigClockView;
 
     /**
-     * Text clock for both hour and minute
+     * Small clock shown on lock screen above stack scroller.
      */
-    private TextClock mAmpmClock;
-    private TextClock mHourClock;
-    private TextClock mMinuteClock;
+    private View mView;
+    private TextClock mLockClock;
 
     /**
-     * Create a DefaultClockController instance.
+     * Create a BinaryClockController instance.
      *
      * @param res Resources contains title and thumbnail.
      * @param inflater Inflater used to inflate custom clock views.
      * @param colorExtractor Extracts accent color from wallpaper.
      */
-    public SammyClockController(Resources res, LayoutInflater inflater,
+    public BinaryClockController(Resources res, LayoutInflater inflater,
             SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
+        mClockPosition = new SmallClockPosition(res);
     }
 
     private void createViews() {
-        mView = (ClockLayout) mLayoutInflater
-                .inflate(R.layout.digital_clock_sammy, null);
-        mAmpmClock = mView.findViewById(R.id.clockampm);
-        mHourClock = mView.findViewById(R.id.clockHour);
-        mMinuteClock = mView.findViewById(R.id.clockMinute);
+        mBigClockView = (ClockLayout) mLayoutInflater.inflate(R.layout.binary_clock, null);
+        mBinaryClock = mBigClockView.findViewById(R.id.analog_clock);
+
+        mView = mLayoutInflater.inflate(R.layout.digital_clock, null);
+        mLockClock = mView.findViewById(R.id.lock_screen_clock);
     }
 
     @Override
     public void onDestroyView() {
+        mBigClockView = null;
+        mBinaryClock = null;
         mView = null;
-        mAmpmClock = null;
-        mHourClock = null;
-        mMinuteClock = null;
+        mLockClock = null;
     }
 
     @Override
     public String getName() {
-        return "sammy";
+        return "binary";
     }
 
     @Override
     public String getTitle() {
-        return "SAMMY";
+        return mResources.getString(R.string.clock_title_binary);
     }
 
     @Override
     public Bitmap getThumbnail() {
-        return BitmapFactory.decodeResource(mResources, R.drawable.sammy_thumbnail);
+        return BitmapFactory.decodeResource(mResources, R.drawable.binary_thumbnail);
     }
 
     @Override
     public Bitmap getPreview(int width, int height) {
-
-        View previewView = mLayoutInflater.inflate(R.layout.digital_sammy_preview, null);
-        TextClock previewAmpmTime = previewView.findViewById(R.id.clockampm);
-        TextClock previewHourTime = previewView.findViewById(R.id.clockHour);
-        TextClock previewMinuteTime = previewView.findViewById(R.id.clockMinute);
-        TextClock previewDate = previewView.findViewById(R.id.date);
+        // Use the big clock view for the preview
+        View view = getBigClockView();
 
         // Initialize state of plugin before generating preview.
-        previewAmpmTime.setTextColor(Color.WHITE);
-        previewHourTime.setTextColor(Color.WHITE);
-        previewMinuteTime.setTextColor(Color.WHITE);
-        previewDate.setTextColor(Color.WHITE);
+        setDarkAmount(1f);
+        setTextColor(Color.WHITE);
         ColorExtractor.GradientColors colors = mColorExtractor.getColors(
                 WallpaperManager.FLAG_LOCK);
         setColorPalette(colors.supportsDarkText(), colors.getColorPalette());
+        onTimeTick();
 
-        return mRenderer.createPreview(previewView, width, height);
+        return mRenderer.createPreview(view, width, height);
     }
 
     @Override
@@ -150,12 +147,15 @@ public class SammyClockController implements ClockPlugin {
 
     @Override
     public View getBigClockView() {
-        return null;
+        if (mBigClockView == null) {
+            createViews();
+        }
+        return mBigClockView;
     }
 
     @Override
     public int getPreferredY(int totalHeight) {
-        return CLOCK_USE_DEFAULT_Y;
+        return mClockPosition.getPreferredY();
     }
 
     @Override
@@ -163,31 +163,31 @@ public class SammyClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        mMinuteClock.setTextColor(color);
+        mBinaryClock.setTintColor(color);
     }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mMinuteClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {}
 
     @Override
     public void onTimeTick() {
+        mBinaryClock.onTimeChanged();
+        mBigClockView.onTimeChanged();
+        mLockClock.refreshTime();
     }
 
     @Override
     public void setDarkAmount(float darkAmount) {
-        mView.setDarkAmount(darkAmount);
+        mClockPosition.setDarkAmount(darkAmount);
+        mBigClockView.setDarkAmount(darkAmount);
+        boolean dark = darkAmount == 1;
+        mBinaryClock.setDark(dark);
     }
 
     @Override
-    public void onTimeZoneChanged(TimeZone timeZone) {}
+    public void onTimeZoneChanged(TimeZone timeZone) {
+        mBinaryClock.onTimeZoneChanged(timeZone);
+    }
 
     @Override
     public boolean shouldShowStatusArea() {

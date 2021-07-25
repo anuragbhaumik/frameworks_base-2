@@ -21,19 +21,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.text.Html;
 import android.widget.TextClock;
-import android.provider.Settings;
-import android.content.Context;
 
 import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -75,8 +70,6 @@ public class SamsungClockController implements ClockPlugin {
      */
     private TextClock mClock;
 
-    private Context mContext;
-
     /**
      * Create a DefaultClockController instance.
      *
@@ -85,11 +78,10 @@ public class SamsungClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     public SamsungClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
     }
 
     private void createViews() {
@@ -99,15 +91,6 @@ public class SamsungClockController implements ClockPlugin {
         mClock.setLineSpacing(0, 0.8f);
         mClock.setFormat12Hour("hh\nmm");
         mClock.setFormat24Hour("kk\nmm");
-        int mAccentColor = mContext.getResources().getColor(R.color.lockscreen_clock_accent_color);
-
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-             mClock.setFormat12Hour(Html.fromHtml("<font color=" + mAccentColor + ">hh</font><br><font color=" + mAccentColor + ">mm</font>"));
-             mClock.setFormat24Hour(Html.fromHtml("<font color=" + mAccentColor + ">kk</font><br><font color=" + mAccentColor + ">mm</font>"));
-        } else {
-            mClock.setFormat12Hour(Html.fromHtml("hh<br>mm"));
-            mClock.setFormat24Hour(Html.fromHtml("kk<br>mm"));
-        }
     }
 
     @Override
@@ -175,28 +158,18 @@ public class SamsungClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mClock.setTextColor(color);
-        }
+        mClock.setTextColor(color);
     }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {}
 
     @Override
     public void onTimeTick() {
-        mView.onTimeChanged();
-        mClock.refreshTime();
+        if (mView != null && mClock != null) {
+            mView.onTimeChanged();
+            mClock.refreshTime();
+        }
     }
 
     @Override

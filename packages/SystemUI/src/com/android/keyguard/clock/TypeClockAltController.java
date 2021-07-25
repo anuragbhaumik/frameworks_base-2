@@ -21,17 +21,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.util.MathUtils;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.content.Context;
 
 import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -40,7 +37,7 @@ import static android.view.View.TEXT_ALIGNMENT_CENTER;
 /**
  * Plugin for a custom Typographic clock face that displays the time in words.
  */
-public class TypeClockCenteredController implements ClockPlugin {
+public class TypeClockAltController implements ClockPlugin {
 
     /**
      * Resources used to get title and thumbnail.
@@ -87,21 +84,18 @@ public class TypeClockCenteredController implements ClockPlugin {
      */
     private CrossFadeDarkController mDarkController;
 
-    private Context mContext;
-
     /**
-     * Create a TypeClockCenteredController instance.
+     * Create a TypeClockAltController instance.
      *
      * @param res Resources contains title and thumbnail.
      * @param inflater Inflater used to inflate custom clock views.
      * @param colorExtractor Extracts accent color from wallpaper.
      */
-    TypeClockCenteredController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+    TypeClockAltController(Resources res, LayoutInflater inflater,
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
         mStatusBarHeight = res.getDimensionPixelSize(R.dimen.status_bar_height);
         mKeyguardLockPadding = res.getDimensionPixelSize(R.dimen.keyguard_lock_padding);
         mKeyguardLockHeight = res.getDimensionPixelSize(R.dimen.keyguard_lock_height);
@@ -109,12 +103,12 @@ public class TypeClockCenteredController implements ClockPlugin {
     }
 
     private void createViews() {
-        mView = mLayoutInflater.inflate(R.layout.type_clock_centered, null);
+        mView = mLayoutInflater.inflate(R.layout.type_clock_alt, null);
         mTypeClock = mView.findViewById(R.id.type_clock);
 
         // For now, this view is used to hide the default digital clock.
         // Need better transition to lock screen.
-        mLockClock = (TypographicClock) mLayoutInflater.inflate(R.layout.typographic_clock_centered, null);
+        mLockClock = (TypographicClock) mLayoutInflater.inflate(R.layout.typographic_clock_alt, null);
         mLockClock.setVisibility(View.GONE);
 
         mDarkController = new CrossFadeDarkController(mView, mLockClock);
@@ -130,12 +124,12 @@ public class TypeClockCenteredController implements ClockPlugin {
 
     @Override
     public String getName() {
-        return "type_centered";
+        return "type_alt";
     }
 
     @Override
     public String getTitle() {
-        return mResources.getString(R.string.clock_title_type_centered);
+        return mResources.getString(R.string.clock_title_type_alt);
     }
 
     @Override
@@ -191,23 +185,9 @@ public class TypeClockCenteredController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mTypeClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mLockClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mTypeClock.setTextColor(color);
-            mLockClock.setTextColor(color);
-        }
+        mTypeClock.setTextColor(color);
+        mLockClock.setTextColor(color);
     }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mTypeClock.setTypeface(tf);
-        mLockClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {
@@ -215,13 +195,8 @@ public class TypeClockCenteredController implements ClockPlugin {
             return;
         }
         final int color = colorPalette[Math.max(0, colorPalette.length - 5)];
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mTypeClock.setClockColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mLockClock.setClockColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mTypeClock.setClockColor(color);
-            mLockClock.setClockColor(color);
-        }
+        mTypeClock.setClockColor(color);
+        mLockClock.setClockColor(color);
     }
 
     @Override

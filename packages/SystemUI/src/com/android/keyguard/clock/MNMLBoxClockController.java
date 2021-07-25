@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2017-2018 I N F I N I T Y (Amal Das)
  * Copyright (C) 2019 The Android Open Source Project
- * Copyright (C) 2020 Bootleggers ROM
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +16,11 @@
 package com.android.keyguard.clock;
 
 import android.app.WallpaperManager;
-import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.icu.text.DateFormat;
 import android.icu.text.DisplayContext;
 import android.text.Html;
@@ -36,7 +32,6 @@ import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -81,6 +76,7 @@ public class MNMLBoxClockController implements ClockPlugin {
      */
     private TextView mClock;
     private TextView mDate;
+    private TextView mDateDay;
 
     /**
      * Time and calendars to check the date
@@ -88,8 +84,6 @@ public class MNMLBoxClockController implements ClockPlugin {
     private final Calendar mTime = Calendar.getInstance(TimeZone.getDefault());
     private String mDescFormat;
     private TimeZone mTimeZone;
-
-    private Context mContext;
 
     /**
      * Create a DefaultClockController instance.
@@ -99,11 +93,10 @@ public class MNMLBoxClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     public MNMLBoxClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
     }
 
     private void createViews() {
@@ -111,7 +104,7 @@ public class MNMLBoxClockController implements ClockPlugin {
                 .inflate(R.layout.digital_mnml_box, null);
         mClock = mView.findViewById(R.id.clock);
         mDate = mView.findViewById(R.id.bigDate);
-        onTimeTick();
+        mDateDay = mView.findViewById(R.id.bigDateDay);
     }
 
     @Override
@@ -119,6 +112,7 @@ public class MNMLBoxClockController implements ClockPlugin {
         mView = null;
         mClock = null;
         mDate = null;
+        mDateDay = null;
     }
 
     @Override
@@ -133,29 +127,24 @@ public class MNMLBoxClockController implements ClockPlugin {
 
     @Override
     public Bitmap getThumbnail() {
-        return BitmapFactory.decodeResource(mResources, R.drawable.mmnl_box);
+        return BitmapFactory.decodeResource(mResources, R.drawable.mnmlbox_thumbnail);
     }
 
     @Override
     public Bitmap getPreview(int width, int height) {
 
-        View previewView = mLayoutInflater.inflate(R.layout.digital_mnml_box, null);
+        View previewView = mLayoutInflater.inflate(R.layout.digital_mnml_box_preview, null);
         TextView previewTime = previewView.findViewById(R.id.clock);
         TextView previewDate = previewView.findViewById(R.id.bigDate);
+        TextView previewDateDay = previewView.findViewById(R.id.bigDateDay);
 
         // Initialize state of plugin before generating preview.
+        previewTime.setTextColor(Color.WHITE);
+        previewDate.setTextColor(Color.WHITE);
+        previewDateDay.setTextColor(Color.WHITE);
         ColorExtractor.GradientColors colors = mColorExtractor.getColors(
                 WallpaperManager.FLAG_LOCK);
-        final int hour = mTime.get(Calendar.HOUR) % 12;
-        // lazy and ugly workaround for the it's string
-        String typeHeader = mResources.getQuantityText(
-                R.plurals.type_clock_header, hour).toString();
-        typeHeader = typeHeader.replaceAll("\\n", "") + " ";
-        SimpleDateFormat timeformat = new SimpleDateFormat("HH:mm");
-        previewTime.setText(typeHeader.substring(0, typeHeader.indexOf("^")) + " " + timeformat.format(mTime.getInstance().getTimeInMillis()));
-        DateFormat dateFormat = DateFormat.getInstanceForSkeleton("EEEEMMMMd", Locale.getDefault());
-        dateFormat.setContext(DisplayContext.CAPITALIZATION_FOR_STANDALONE);
-        previewDate.setText(dateFormat.format(mTime.getInstance().getTimeInMillis()));
+        setColorPalette(colors.supportsDarkText(), colors.getColorPalette());
 
         return mRenderer.createPreview(previewView, width, height);
     }
@@ -183,23 +172,9 @@ public class MNMLBoxClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mDate.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mClock.setTextColor(color);
-            mDate.setTextColor(color);
-        }
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {
-        mDate.setTypeface(tf);
-    }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mClock.setTypeface(tf);
+        mClock.setTextColor(color);
+        mDate.setTextColor(color);
+        mDateDay.setTextColor(color);
     }
 
     @Override
@@ -207,17 +182,6 @@ public class MNMLBoxClockController implements ClockPlugin {
 
     @Override
     public void onTimeTick() {
-        mTime.setTimeInMillis(System.currentTimeMillis());
-        final int hour = mTime.get(Calendar.HOUR) % 12;
-        // lazy and ugly workaround for the it's string
-        String typeHeader = mResources.getQuantityText(
-                R.plurals.type_clock_header, hour).toString();
-        typeHeader = typeHeader.replaceAll("\\n", "");
-        SimpleDateFormat timeformat = new SimpleDateFormat("HH:mm");
-        mClock.setText(typeHeader.substring(0, typeHeader.indexOf("^")) + " " + timeformat.format(mTime.getInstance().getTimeInMillis()));
-        DateFormat dateFormat = DateFormat.getInstanceForSkeleton("EEEEMMMMd", Locale.getDefault());
-        dateFormat.setContext(DisplayContext.CAPITALIZATION_FOR_STANDALONE);
-        mDate.setText(dateFormat.format(mTime.getInstance().getTimeInMillis()));
 
     }
 

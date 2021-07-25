@@ -21,18 +21,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
-import android.provider.Settings;
-import android.content.Context;
 
 import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -76,8 +72,6 @@ public class DefaultClockController implements ClockPlugin {
      */
     private TextView mTextDate;
 
-     private Context mContext;
-
     /**
      * Create a DefaultClockController instance.
      *
@@ -86,11 +80,10 @@ public class DefaultClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     public DefaultClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
     }
 
     private void createViews() {
@@ -161,21 +154,9 @@ public class DefaultClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mTextTime.setTextColor((mContext.getResources().getColor(R.color.lockscreen_clock_accent_color)));
-        } else {
-            mTextTime.setTextColor(color);
-            mTextDate.setTextColor(color);
-        }
+        mTextTime.setTextColor(color);
+        mTextDate.setTextColor(color);
     }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mTextTime.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {}

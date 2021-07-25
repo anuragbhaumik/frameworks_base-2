@@ -1,18 +1,15 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (C) 2014-2020 The BlissRoms Project
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* * http://www.apache.org/licenses/LICENSE-2.0
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 package com.android.keyguard.clock;
 
 import android.app.WallpaperManager;
@@ -35,7 +32,7 @@ import java.util.TimeZone;
 /**
  * Controller for Stretch clock that can appear on lock screen and AOD.
  */
-public class AnalogClockController implements ClockPlugin {
+public class OPNumbersClockController implements ClockPlugin {
 
     /**
      * Resources used to get title and thumbnail.
@@ -66,7 +63,7 @@ public class AnalogClockController implements ClockPlugin {
      * Custom clock shown on AOD screen and behind stack scroller on lock.
      */
     private ClockLayout mBigClockView;
-    private ImageClock mAnalogClock;
+    private ImageClock mOneplusClock;
 
     /**
      * Small clock shown on lock screen above stack scroller.
@@ -86,7 +83,7 @@ public class AnalogClockController implements ClockPlugin {
      * @param inflater Inflater used to inflate custom clock views.
      * @param colorExtractor Extracts accent color from wallpaper.
      */
-    public AnalogClockController(Resources res, LayoutInflater inflater,
+    public OPNumbersClockController(Resources res, LayoutInflater inflater,
             SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
@@ -95,8 +92,8 @@ public class AnalogClockController implements ClockPlugin {
     }
 
     private void createViews() {
-        mBigClockView = (ClockLayout) mLayoutInflater.inflate(R.layout.analog_clock, null);
-        mAnalogClock = mBigClockView.findViewById(R.id.analog_clock);
+        mBigClockView = (ClockLayout) mLayoutInflater.inflate(R.layout.oneplus_numbers_clock, null);
+        mOneplusClock = mBigClockView.findViewById(R.id.analog_clock);
 
         mView = mLayoutInflater.inflate(R.layout.digital_clock, null);
         mLockClock = mView.findViewById(R.id.lock_screen_clock);
@@ -105,24 +102,24 @@ public class AnalogClockController implements ClockPlugin {
     @Override
     public void onDestroyView() {
         mBigClockView = null;
-        mAnalogClock = null;
+        mOneplusClock = null;
         mView = null;
         mLockClock = null;
     }
 
     @Override
     public String getName() {
-        return "analog";
+        return "Oneplus";
     }
 
     @Override
     public String getTitle() {
-        return mResources.getString(R.string.clock_title_analog);
+        return mResources.getString(R.string.clock_title_oneplus_numbers);
     }
 
     @Override
     public Bitmap getThumbnail() {
-        return BitmapFactory.decodeResource(mResources, R.drawable.analog_thumbnail);
+        return BitmapFactory.decodeResource(mResources, R.drawable.oneplus_numbers_thumbnail);
     }
 
     @Override
@@ -181,12 +178,12 @@ public class AnalogClockController implements ClockPlugin {
         final int primary = mPalette.getPrimaryColor();
         final int secondary = mPalette.getSecondaryColor();
         mLockClock.setTextColor(secondary);
-        mAnalogClock.setClockColors(primary, secondary);
+        //mOneplusClock.setClockColors(primary, secondary);
     }
 
     @Override
     public void onTimeTick() {
-        mAnalogClock.onTimeChanged();
+        mOneplusClock.onTimeChanged();
         mBigClockView.onTimeChanged();
         mLockClock.refreshTime();
     }
@@ -200,7 +197,7 @@ public class AnalogClockController implements ClockPlugin {
 
     @Override
     public void onTimeZoneChanged(TimeZone timeZone) {
-        mAnalogClock.onTimeZoneChanged(timeZone);
+        mOneplusClock.onTimeZoneChanged(timeZone);
     }
 
     @Override

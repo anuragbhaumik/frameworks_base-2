@@ -1,8 +1,7 @@
 /*
  * Copyright (C) 2019 The Android Open Source Project
  * Copyright (C) 2020 ProjectFluid
- * Copyright (C) 2021 NezukoOS 
- *
+ * Copyright (C) 2021 ShapeShiftOS
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,23 +17,18 @@
 package com.android.keyguard.clock;
 
 import android.app.WallpaperManager;
-import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
-import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextClock;
 
-import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
-import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
+import com.android.systemui.colorextraction.SysuiColorExtractor;
+import com.android.internal.colorextraction.ColorExtractor;
 
 import java.util.TimeZone;
 
@@ -44,7 +38,7 @@ import static com.android.systemui.statusbar.phone
 /**
  * Plugin for the default clock face used only to provide a preview.
  */
-public class Fluidv2ClockController implements ClockPlugin {
+public class ShapeShiftClockController implements ClockPlugin {
 
     /**
      * Resources used to get title and thumbnail.
@@ -57,14 +51,15 @@ public class Fluidv2ClockController implements ClockPlugin {
     private final LayoutInflater mLayoutInflater;
 
     /**
+     * Renders preview from clock view.
+     */
+    private final ViewPreviewer mRenderer = new ViewPreviewer();
+
+    /**
      * Extracts accent color from wallpaper.
      */
     private final SysuiColorExtractor mColorExtractor;
 
-    /**
-     * Renders preview from clock view.
-     */
-    private final ViewPreviewer mRenderer = new ViewPreviewer();
 
     /**
      * Root view of clock.
@@ -75,12 +70,9 @@ public class Fluidv2ClockController implements ClockPlugin {
      * Text clock in preview view hierarchy.
      */
     private TextClock mTimeClock;
-    private TextClock mMinutesClock;
     private TextClock mDay;
     private TextClock mDate;
-    private TextClock mYear;
-
-    private Context mContext;
+    private TextClock mTimeClockAccented;
 
     /**
      * Create a DefaultClockController instance.
@@ -89,72 +81,61 @@ public class Fluidv2ClockController implements ClockPlugin {
      * @param inflater Inflater used to inflate custom clock views.
      * @param colorExtractor Extracts accent color from wallpaper.
      */
-    public Fluidv2ClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+    public ShapeShiftClockController(Resources res, LayoutInflater inflater,
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
     }
 
     private void createViews() {
         mView = (ClockLayout) mLayoutInflater
-                .inflate(R.layout.digital_clock_fluidv2, null);
-        mTimeClock = mView.findViewById(R.id.time_clock);
-        mMinutesClock = mView.findViewById(R.id.minutes_clock);
-        mDay = mView.findViewById(R.id.clock_day);
-        mDate = mView.findViewById(R.id.clock_date);
-        mYear = mView.findViewById(R.id.clock_year);
+                .inflate(R.layout.digital_clock_ssos, null);
+        setViews(mView);
     }
+
+    private void setViews(View view) {
+        mTimeClock = view.findViewById(R.id.time_clock);
+        mTimeClockAccented = view.findViewById(R.id.time_clock_accented);
+        mDay = view.findViewById(R.id.clock_day);
+        mDate = view.findViewById(R.id.timedate);
+    }
+
 
     @Override
     public void onDestroyView() {
         mView = null;
         mTimeClock = null;
-        mMinutesClock = null;
         mDay = null;
         mDate = null;
-        mYear = null;
+        mTimeClockAccented = null;
     }
 
     @Override
     public String getName() {
-        return "fluid v2";
+        return "ssos";
     }
 
     @Override
     public String getTitle() {
-        return "Fluid V2";
+        return "ShapeShift";
     }
 
     @Override
     public Bitmap getThumbnail() {
-        return BitmapFactory.decodeResource(mResources, R.drawable.fluidv2_thumbnail);
+        return BitmapFactory.decodeResource(mResources, R.drawable.ssos_thumbnail);
     }
 
     @Override
     public Bitmap getPreview(int width, int height) {
 
-        View previewView = mLayoutInflater.inflate(R.layout.digital_fluidv2_preview, null);
-        TextClock previewTime = previewView.findViewById(R.id.time_clock);
-        TextClock previewMinutes = previewView.findViewById(R.id.minutes_clock);
-        TextClock previewDay = previewView.findViewById(R.id.clock_day);
-        TextClock previewDate = previewView.findViewById(R.id.clock_date);
-        TextClock previewYear = previewView.findViewById(R.id.clock_year);
+        View previewView = mLayoutInflater.inflate(R.layout.digital_clock_ssos_preview, null);
+        setViews(previewView);
 
-        // Initialize state of plugin before generating preview.
-        previewTime.setTextColor(Color.WHITE);
-        previewDay.setTextColor(Color.WHITE);
-        previewYear.setTextColor(Color.WHITE);
         ColorExtractor.GradientColors colors = mColorExtractor.getColors(
                 WallpaperManager.FLAG_LOCK);
-        int[] colorPalette = colors.getColorPalette();
-        int accentColor = mResources.getColor(R.color.typeClockAccentColor, null);
-        if (colorPalette != null) {
-            accentColor = colorPalette[Math.max(0, colorPalette.length - 5)];
-        }
-        previewMinutes.setTextColor(accentColor);
-        previewDate.setTextColor(accentColor);
+
+        setColorPalette(colors.supportsDarkText(), colors.getColorPalette());
         onTimeTick();
 
         return mRenderer.createPreview(previewView, width, height);
@@ -185,18 +166,7 @@ public class Fluidv2ClockController implements ClockPlugin {
     public void setTextColor(int color) {
         mTimeClock.setTextColor(color);
         mDay.setTextColor(color);
-        mYear.setTextColor(color);
-    }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mTimeClock.setTypeface(tf);
-        mDay.setTypeface(tf);
-        mYear.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {
+        mDate.setTextColor(color);
     }
 
     @Override
@@ -205,28 +175,23 @@ public class Fluidv2ClockController implements ClockPlugin {
             return;
         }
         final int accentColor = colorPalette[Math.max(0, colorPalette.length - 5)];
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mMinutesClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-            mDate.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mMinutesClock.setTextColor(accentColor);
-            mDate.setTextColor(accentColor);
-        }
+        mTimeClockAccented.setTextColor(accentColor);
     }
 
     @Override
     public void onTimeTick() {
-        mView.onTimeChanged();
-        mTimeClock.refreshTime();
-        mMinutesClock.refreshTime();
-        mDay.refreshTime();
-        mDate.refreshTime();
-        mYear.refreshTime();
+        if (mView != null) {
+            mView.onTimeChanged();
+            mTimeClock.refreshTime();
+            mTimeClockAccented.refreshTime();
+            mDay.refreshTime();
+            mDate.refreshTime();
+        }
     }
 
     @Override
     public void setDarkAmount(float darkAmount) {
-        mView.setDarkAmount(darkAmount);
+        if (mView != null) mView.setDarkAmount(darkAmount);
     }
 
     @Override

@@ -21,19 +21,15 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint.Style;
-import android.graphics.Typeface;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextClock;
-import android.provider.Settings;
-import android.content.Context;
 
 import com.android.internal.colorextraction.ColorExtractor;
 import com.android.systemui.R;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
 import com.android.systemui.plugins.ClockPlugin;
-import com.android.internal.util.derp.derpUtils;
 
 import java.util.TimeZone;
 
@@ -75,8 +71,6 @@ public class DefaultBoldClockController implements ClockPlugin {
      */
     private TextClock mClock;
 
-    private Context mContext;
-
     /**
      * Create a DefaultClockController instance.
      *
@@ -85,26 +79,18 @@ public class DefaultBoldClockController implements ClockPlugin {
      * @param colorExtractor Extracts accent color from wallpaper.
      */
     public DefaultBoldClockController(Resources res, LayoutInflater inflater,
-            SysuiColorExtractor colorExtractor, Context context) {
+            SysuiColorExtractor colorExtractor) {
         mResources = res;
         mLayoutInflater = inflater;
         mColorExtractor = colorExtractor;
-        mContext = context;
     }
 
     private void createViews() {
         mView = (ClockLayout) mLayoutInflater
                 .inflate(R.layout.digital_clock_custom, null);
         mClock = mView.findViewById(R.id.clock);
-        int mAccentColor = mContext.getResources().getColor(R.color.lockscreen_clock_accent_color);
-
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-             mClock.setFormat12Hour(Html.fromHtml("<strong><font color=" + mAccentColor + ">h</font></strong>:<strong><font color=" + mAccentColor + ">mm</font></strong>"));
-             mClock.setFormat24Hour(Html.fromHtml("<strong><font color=" + mAccentColor + ">kk</font></strong>:<strong><font color=" + mAccentColor + ">mm</font></strong>"));
-        } else {
-            mClock.setFormat12Hour(Html.fromHtml("<strong>h</strong>:<strong>mm</strong>"));
-            mClock.setFormat24Hour(Html.fromHtml("<strong>kk</strong>:<strong>mm</strong>"));
-        }
+        mClock.setFormat12Hour(Html.fromHtml("<strong>h</strong>:mm"));
+        mClock.setFormat24Hour(Html.fromHtml("<strong>kk</strong>:mm"));
     }
 
     @Override
@@ -171,28 +157,18 @@ public class DefaultBoldClockController implements ClockPlugin {
 
     @Override
     public void setTextColor(int color) {
-        if(derpUtils.useLockscreenClockAccentColor(mContext)) {
-            mClock.setTextColor(mContext.getResources().getColor(R.color.lockscreen_clock_accent_color));
-        } else {
-            mClock.setTextColor(color);
-        }
+        mClock.setTextColor(color);
     }
-
-    @Override
-    public void setTypeface(Typeface tf) {
-        mClock.setTypeface(tf);
-    }
-
-    @Override
-    public void setDateTypeface(Typeface tf) {}
 
     @Override
     public void setColorPalette(boolean supportsDarkText, int[] colorPalette) {}
 
     @Override
     public void onTimeTick() {
-        mView.onTimeChanged();
-        mClock.refreshTime();
+        if (mView != null && mClock != null) {
+            mView.onTimeChanged();
+            mClock.refreshTime();
+        }
     }
 
     @Override
